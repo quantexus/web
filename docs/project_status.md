@@ -1,6 +1,6 @@
 # Project Status — Quantexus Web Terminal
 
-## Current Phase: Phase 1 — MVP Trading Terminal (In Progress)
+## Current Phase: Phase 1 — MVP Trading Terminal (Scaffold Complete)
 
 **Dependency:** Phase 7 of the engine (`../engine/tasks/phase-7-frontend-integration.md`) must be complete before `GetBalances`, `GetRecentTrades`, and `GetOpenOrders` work end-to-end. The BFF routes can be built before then — they will return errors gracefully until the engine RPCs land.
 
@@ -14,21 +14,22 @@
 **Engine dependency:** Phase 7 (new RPCs: GetBalances, GetRecentTrades, GetOpenOrders).
 
 **Acceptance criteria:**
-- [ ] Next.js project scaffolded (App Router, TypeScript, Tailwind)
-- [ ] shadcn/ui configured
-- [ ] TanStack Query + Zustand wired (providers in root layout)
-- [ ] gRPC client (`src/lib/engine/client.ts`) connecting to engine
-- [ ] Fixed-point format utilities (`src/lib/utils/format.ts`)
-- [ ] BFF API routes: orderbook, balances, trades, place order, cancel order, open orders
-- [ ] `OrderBook` component — bid/ask price ladder, depth coloring
-- [ ] `OrderForm` component — limit/market toggle, buy/sell toggle, price + quantity inputs, submit
-- [ ] `TradesFeed` component — recent matched trades with price, quantity, side, time
-- [ ] `BalancePanel` component — available + reserved per asset
-- [ ] `OpenOrders` component — user's open limit orders with cancel button
-- [ ] Trading layout — all panels on one page
-- [ ] Symbol selector in header (single symbol for MVP)
-- [ ] User session panel — set/display userId (UUID input, persisted to localStorage)
-- [ ] Dark terminal theme
+- [x] Next.js project scaffolded (App Router, TypeScript, Tailwind)
+- [x] shadcn/ui configured (minimal hand-written Button, Input, Label components)
+- [x] TanStack Query + Zustand wired (providers in root layout)
+- [x] gRPC client (`src/lib/engine/client.ts`) connecting to engine (server-side only)
+- [x] Fixed-point format utilities (`src/lib/utils/format.ts`) — BigInt only, no parseFloat
+- [x] BFF API routes: orderbook, balances, trades, place order, cancel order, open orders
+- [x] `OrderBook` component — bid/ask price ladder, depth coloring
+- [x] `OrderForm` component — limit/market toggle, buy/sell toggle, price + quantity inputs, submit
+- [x] `TradesFeed` component — recent matched trades with price, quantity, side, time
+- [x] `BalancePanel` component — available + reserved per asset
+- [x] `OpenOrders` component — user's open limit orders with cancel button
+- [x] Trading layout — all panels on one page
+- [x] Symbol selector in header (single symbol for MVP)
+- [x] User session panel — set/display userId (UUID input, persisted to localStorage)
+- [x] Dark terminal theme
+- Note: Phase 7 RPCs (GetBalances, GetRecentTrades, GetOpenOrders) return 501 gracefully until engine Phase 7 lands
 
 ---
 

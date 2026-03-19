@@ -11,6 +11,8 @@
 
 > **Rule:** When the engine proto changes, update `src/lib/engine/types.ts` to match before touching any component.
 
+> **Rule:** Before every commit, ask: *did I have to reason from first principles about something that should already be documented?* If yes, update `CLAUDE.md` or the relevant `docs/` file before committing. Examples worth capturing: new patterns, accepted trade-offs, recurring conventions, cross-layer interface shapes.
+
 ---
 
 ## Development
@@ -102,8 +104,22 @@ All engine calls go through `src/app/api/`. Each route:
 - No `any` types in test files.
 - API route tests mock `src/lib/engine/client.ts` only — never mock TanStack Query or React internals.
 
+### Order Lifecycle States
+
+Valid order states: `Created`, `Validating`, `PendingMatch`, `PartiallyFilled`, `Filled`, `Cancelled`, `Rejected`, `Settled`, `Completed`.
+
+Only transitions defined in the engine PRD (Section 5.4) are valid. The UI must not infer or fabricate states — display exactly what the engine returns.
+
 ### Commits
 
+- **Always use the `/commit` skill to create commits. Never run `git commit` directly.**
+- **Always run `/check` before committing.** Fix all lint, type, and test failures before proceeding.
 - `type: description` format (feat, fix, refactor, test, docs, chore).
-- Run `pnpm lint && pnpm typecheck` before committing.
+- One logical change per commit. Do not mix features with refactors.
 - No `console.log` in committed code.
+
+### Code Quality
+
+- No dead code. No commented-out code. No TODO comments without an associated tracking issue.
+- Never log sensitive data (user IDs in prod, balances, tokens).
+- No `any` types anywhere — not in components, hooks, or tests.
