@@ -50,6 +50,7 @@ pnpm test       # vitest
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `ENGINE_GRPC_URL` | Yes | Engine gRPC address, e.g. `localhost:50051` (server-side only, no `NEXT_PUBLIC_`) |
+| `NATS_URL` | Yes | NATS server URL, e.g. `nats://localhost:4222` (server-side only; used by SSE stream routes) |
 
 ---
 
@@ -60,7 +61,8 @@ See [`docs/architecture.md`](docs/architecture.md) for full details. Summary:
 - **Next.js App Router** — file-based routing, server components where possible.
 - **BFF pattern** — browsers can't speak gRPC. Next.js API routes (`src/app/api/`) run server-side, call the engine via `@grpc/grpc-js`, and return JSON to the browser.
 - **No mock layer** — the terminal connects to a real engine. Run `make dev-up` in the engine repo before starting the frontend.
-- **TanStack Query** — all server state (order book, balances, trades, open orders). Handles polling, caching, and invalidation.
+- **TanStack Query** — server state for balances and open orders (polling + invalidation). Order book and trades use EventSource SSE hooks instead.
+- **SSE streams** — `useOrderBook` and `useRecentTrades` use `EventSource` against `/api/stream/` routes. Connection status shown in header via `useStreamStore`.
 - **Zustand** — client state: active symbol, order form selections, user session (userId for testing without auth).
 - **shadcn/ui** — component primitives in `src/components/ui/`. Never edit these files manually; use the shadcn CLI to add/update.
 

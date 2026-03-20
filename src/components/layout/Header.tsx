@@ -3,7 +3,40 @@
 import { useState } from "react"
 import { useTradingStore } from "@/stores/trading.store"
 import { useSessionStore } from "@/stores/session.store"
+import { useStreamStore } from "@/stores/stream.store"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils/cn"
+
+function StreamIndicator() {
+  const orderbookStatus = useStreamStore((s) => s.orderbookStatus)
+  const tradesStatus = useStreamStore((s) => s.tradesStatus)
+
+  const isLive = orderbookStatus === "connected" && tradesStatus === "connected"
+  const isPartial =
+    !isLive && (orderbookStatus === "connected" || tradesStatus === "connected")
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      <span
+        className={cn(
+          "inline-block w-1.5 h-1.5 rounded-full",
+          isLive && "bg-green-400",
+          isPartial && "bg-yellow-400",
+          !isLive && !isPartial && "bg-red-500"
+        )}
+      />
+      <span
+        className={cn(
+          isLive && "text-green-400",
+          isPartial && "text-yellow-400",
+          !isLive && !isPartial && "text-red-400"
+        )}
+      >
+        {isLive ? "Live" : isPartial ? "Partial" : "Disconnected"}
+      </span>
+    </div>
+  )
+}
 
 export function Header() {
   const { symbol } = useTradingStore()
@@ -33,6 +66,7 @@ export function Header() {
             {symbol}
           </span>
         )}
+        <StreamIndicator />
       </div>
 
       <div>

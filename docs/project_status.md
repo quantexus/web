@@ -1,17 +1,13 @@
 # Project Status — Quantexus Web Terminal
 
-## Current Phase: Phase 1 — MVP Trading Terminal (Scaffold Complete)
-
-**Dependency:** Phase 7 of the engine (`../engine/tasks/phase-7-frontend-integration.md`) must be complete before `GetBalances`, `GetRecentTrades`, and `GetOpenOrders` work end-to-end. The BFF routes can be built before then — they will return errors gracefully until the engine RPCs land.
+## Current Phase: Phase 2 — Live Updates (Complete)
 
 ---
 
 ## Roadmap
 
-### Phase 1 — MVP Trading Terminal
+### Phase 1 — MVP Trading Terminal ✅
 **Goal:** A fully functional trading terminal connected to a live engine. All panels operational.
-
-**Engine dependency:** Phase 7 (new RPCs: GetBalances, GetRecentTrades, GetOpenOrders).
 
 **Acceptance criteria:**
 - [x] Next.js project scaffolded (App Router, TypeScript, Tailwind)
@@ -29,18 +25,21 @@
 - [x] Symbol selector in header (single symbol for MVP)
 - [x] User session panel — set/display userId (UUID input, persisted to localStorage)
 - [x] Dark terminal theme
-- Note: Phase 7 RPCs (GetBalances, GetRecentTrades, GetOpenOrders) return 501 gracefully until engine Phase 7 lands
 
 ---
 
-### Phase 2 — Live Updates
+### Phase 2 — Live Updates ✅
 **Goal:** Replace polling with real-time push for order book and trade feed.
 
 **Acceptance criteria:**
-- [ ] WebSocket or SSE endpoint added to engine (or NATS events proxied via Next.js)
-- [ ] Order book updates in real time without polling
-- [ ] Trade feed updates in real time
-- [ ] Reconnect on disconnect with visual indicator
+- [x] SSE route `GET /api/stream/trades/[symbol]` — subscribes to `quantexus.{symbol}.trade` NATS subject, streams `TradeEntry` events to browser
+- [x] SSE route `GET /api/stream/orderbook/[symbol]` — polls gRPC `GetOrderBook` every 200ms server-side, streams snapshots (eliminates per-browser polling)
+- [x] `useOrderBook` hook replaced with EventSource-based implementation (no browser polling)
+- [x] `useRecentTrades` hook replaced with EventSource-based implementation; seeds historical trades from REST then layers real-time NATS events
+- [x] Connection status indicator in header (Live / Partial / Disconnected) with green/yellow/red dot
+- [x] Reconnect on disconnect — EventSource retries automatically on error
+- [x] `NATS_URL` env var added to `.env.example` (server-side only)
+- [x] Engine Phase 7 stubs replaced with real gRPC calls (GetBalances, GetRecentTrades, GetOpenOrders)
 
 ---
 

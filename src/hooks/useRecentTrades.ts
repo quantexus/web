@@ -1,28 +1,39 @@
-import { useQuery } from "@tanstack/react-query"
+"use client"
+
+import { useState, useEffect } from "react"
 import type { TradeEntry } from "@/lib/engine/types"
-
-interface TradesResponse {
-  trades: TradeEntry[]
-}
-
-interface NotImplementedResponse {
-  notImplemented: true
-  message: string
-}
+import { useStreamStore } from "@/stores/stream.store"
 
 export function useRecentTrades(symbol: string, limit = 30) {
-  return useQuery<TradesResponse | NotImplementedResponse>({
-    queryKey: ["trades", symbol, limit],
-    queryFn: async () => {
-      const res = await fetch(`/api/trades/${symbol}?limit=${limit}`)
-      if (res.status === 501) {
-        const data = await res.json()
-        return { notImplemented: true as const, message: data.error }
-      }
-      if (!res.ok) throw new Error(await res.text())
-      return res.json()
-    },
-    refetchInterval: 1000,
-    enabled: !!symbol,
-  })
+  const [trades, setTrades] = useState<TradeEntry[]>([])
+  const setTradesStatus = useStreamStore((s) => s.setTradesStatus)
+
+  useEffect(() => {
+    if (!symbol) return
+
+    setTradesStatus("connecting")
+    setTrades([])
+
+    // Seed with historical trades, then layer real-time updates from SSE
+    fetch(`/api/trades/${symbol}?limit=${limit}`)
+      .then((r) => r.json())
+      .then((body: { trades: TradeEntry[] }) => setTrades(body.trades))
+      .catch(() => {})
+
+    const es = new EventSource(`/api/stream/trades/${symbol}`)
+
+    es.onopen = () => setTradesStatus("connected")
+    es.onmessage = (e: MessageEvent<string>) => {
+      const trade = JSON.parse(e.data) as TradeEntry
+      setTrades((prev) => [trade, ...prev].slice(0, limit))
+      setTradesStatus("connected")
+    }
+    es.onerror = () => setTradesStatus("disconnected")
+
+    return () => {
+      es.close()
+    }
+  }, [symbol, limit, setTradesStatus])
+
+  return { data: { trades } }
 }

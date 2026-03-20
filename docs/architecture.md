@@ -2,7 +2,7 @@
 
 ## Overview
 
-Browser-based trading terminal for the Quantexus exchange engine. Connects to a live engine instance. Phase 1 is fully functional — no mock data, no stubs.
+Browser-based trading terminal for the Quantexus exchange engine. Connects to a live engine instance. Phase 1 and Phase 2 are complete — no mock data, no stubs, real-time updates via SSE.
 
 **Guiding philosophy:** Real integration from day one. Grow in features, not in fake scaffolding.
 
@@ -16,9 +16,10 @@ Browser-based trading terminal for the Quantexus exchange engine. Connects to a 
 | Language | TypeScript (strict) | No `any`, no implicit types on public APIs |
 | Styling | Tailwind CSS | Dark terminal theme |
 | UI Primitives | shadcn/ui | Accessible, Radix-backed, never edited manually |
-| Server state | TanStack Query v5 | Polling, caching, mutation, invalidation |
+| Server state | TanStack Query v5 + EventSource | Polling for balances/orders; SSE for order book + trades |
 | Client state | Zustand | Active symbol, order form, user session |
 | gRPC client | `@grpc/grpc-js` | Server-side only (in API routes) |
+| NATS client | `nats` | Server-side only (in SSE stream routes) |
 | Package manager | pnpm | |
 | Testing | Vitest + React Testing Library | |
 | Linting | ESLint + Prettier | |
@@ -31,17 +32,27 @@ Browsers cannot speak HTTP/2 gRPC natively. The solution is a **Backend For Fron
 
 ```
 Browser
-  │  HTTP/JSON (fetch)
+  │  HTTP/JSON (fetch + EventSource SSE)
   ▼
 Next.js API Routes  (src/app/api/**/route.ts)
-  │  gRPC  (@grpc/grpc-js, server-side Node.js)
-  ▼
-Quantexus Engine  (localhost:50051)
+  │  gRPC  (@grpc/grpc-js, server-side Node.js)          NATS subscription
+  ▼                                                         ▼
+Quantexus Engine  (localhost:50051)              NATS  (localhost:4222)
 ```
 
 - API routes are thin: validate input → call engine → return JSON.
+- SSE routes (`src/app/api/stream/`) stream live data to the browser without per-browser polling.
 - No gRPC types ever reach the browser.
-- `ENGINE_GRPC_URL` is a server-side env var only (no `NEXT_PUBLIC_` prefix).
+- `ENGINE_GRPC_URL` and `NATS_URL` are server-side env vars only (no `NEXT_PUBLIC_` prefix).
+
+### SSE Streams
+
+| Route | Source | Pushed to browser |
+|-------|--------|-------------------|
+| `GET /api/stream/trades/[symbol]` | NATS `quantexus.{symbol}.trade` | `TradeEntry` on each fill |
+| `GET /api/stream/orderbook/[symbol]` | gRPC `GetOrderBook` polled at 200ms | `OrderBookResponse` snapshot |
+
+The NATS client is a singleton (`src/lib/nats/client.ts`) reused across SSE request handlers.
 
 ---
 
@@ -51,17 +62,20 @@ Quantexus Engine  (localhost:50051)
 web/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx                      # Root layout (providers, theme)
-│   │   ├── page.tsx                        # Redirect → /trade/BTCUSD
+│   │   ├── layout.tsx                           # Root layout (providers, theme)
+│   │   ├── page.tsx                             # Redirect → /trade/BTCUSD
 │   │   ├── trade/
 │   │   │   └── [symbol]/
-│   │   │       └── page.tsx                # Trading terminal view
-│   │   └── api/                            # BFF — proxies to engine gRPC
-│   │       ├── orderbook/[symbol]/route.ts # GET
-│   │       ├── balances/[userId]/route.ts  # GET
-│   │       ├── trades/[symbol]/route.ts    # GET  (recent trades)
-│   │       ├── orders/route.ts             # POST (place order)
-│   │       └── orders/[orderId]/route.ts   # DELETE (cancel order)
+│   │   │       └── page.tsx                     # Trading terminal view
+│   │   └── api/                                 # BFF — proxies to engine gRPC
+│   │       ├── orderbook/[symbol]/route.ts      # GET (snapshot, fallback)
+│   │       ├── balances/[userId]/route.ts       # GET
+│   │       ├── trades/[symbol]/route.ts         # GET  (historical seed)
+│   │       ├── orders/route.ts                  # GET (open orders) + POST (place)
+│   │       ├── orders/[orderId]/route.ts        # DELETE (cancel order)
+│   │       └── stream/
+│   │           ├── trades/[symbol]/route.ts     # SSE — real-time trades via NATS
+│   │           └── orderbook/[symbol]/route.ts  # SSE — order book every 200ms
 │   ├── components/
 │   │   ├── ui/                             # shadcn/ui primitives
 │   │   ├── trading/
@@ -89,7 +103,17 @@ web/
 │   │       └── cn.ts                       # clsx + tailwind-merge
 │   ├── stores/
 │   │   ├── trading.store.ts                # Active symbol, order form side/type
-│   │   └── session.store.ts                # userId (localStorage-persisted, for testing)
+│   │   ├── session.store.ts                # userId (localStorage-persisted, for testing)
+│   │   └── stream.store.ts                 # SSE connection status (orderbook + trades)
+│   ├── lib/
+│   │   ├── engine/
+│   │   │   ├── client.ts                   # gRPC client singleton (server-side only)
+│   │   │   └── types.ts                    # TS types mirroring proto messages
+│   │   ├── nats/
+│   │   │   └── client.ts                   # NATS connection singleton (server-side only)
+│   │   └── utils/
+│   │       ├── format.ts                   # Fixed-point → display string (BigInt-based)
+│   │       └── cn.ts                       # clsx + tailwind-merge
 │   └── types/
 │       └── domain.ts                       # Frontend-facing domain types
 ├── public/
@@ -106,18 +130,16 @@ web/
 
 ## Engine API Surface
 
-Defined in `../engine/proto/quantexus/v1/order_service.proto`. Phase 1 uses all six RPCs:
+Defined in `../engine/proto/quantexus/v1/order_service.proto`. All six RPCs are operational (engine Phase 7 complete):
 
 | RPC | Used by | Notes |
 |-----|---------|-------|
 | `PlaceOrder` | `POST /api/orders` | Returns order_id + PendingMatch status |
 | `CancelOrder` | `DELETE /api/orders/[orderId]` | Releases reserved funds |
-| `GetOrderBook` | `GET /api/orderbook/[symbol]` | Polled every 500ms |
-| `GetBalances` | `GET /api/balances/[userId]` | Phase 7 engine work required |
-| `GetRecentTrades` | `GET /api/trades/[symbol]` | Phase 7 engine work required |
-| `GetOpenOrders` | `GET /api/orders?userId=&symbol=` | Phase 7 engine work required |
-
-`GetBalances`, `GetRecentTrades`, and `GetOpenOrders` are not yet implemented in the engine. See `../engine/tasks/phase-7-frontend-integration.md`.
+| `GetOrderBook` | `SSE /api/stream/orderbook/[symbol]` | Streamed every 200ms via SSE |
+| `GetBalances` | `GET /api/balances/[userId]` | Polled every 2000ms |
+| `GetRecentTrades` | `GET /api/trades/[symbol]` | Historical seed on connect; live updates via NATS SSE |
+| `GetOpenOrders` | `GET /api/orders?userId=&symbol=` | Polled every 2000ms; invalidated on place/cancel |
 
 ---
 
@@ -148,9 +170,9 @@ Uses `BigInt` internally. **Never pass financial strings through `parseFloat` or
 
 ## Polling Intervals
 
-| Data | Default interval | Notes |
-|------|-----------------|-------|
-| Order book | 500ms | High-frequency |
-| Recent trades | 1000ms | |
-| Balances | 2000ms | |
-| Open orders | 2000ms | Invalidated immediately on place/cancel mutation |
+| Data | Delivery | Notes |
+|------|----------|-------|
+| Order book | SSE push every 200ms | Server-side poll → streamed to all connected browsers |
+| Recent trades | NATS SSE push | Real-time on every fill; historical seed from REST on connect |
+| Balances | Polled 2000ms | TanStack Query |
+| Open orders | Polled 2000ms | TanStack Query; invalidated immediately on place/cancel mutation |

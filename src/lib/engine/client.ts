@@ -72,37 +72,20 @@ export async function cancelOrder(req: CancelOrderRequest): Promise<CancelOrderR
   return grpcCall<CancelOrderResponse>("CancelOrder", req)
 }
 
-// --- Phase 7 stubs — return UNIMPLEMENTED until engine supports these RPCs ---
-// Parameters are accepted in the signature to preserve the interface contract but are unused until implementation.
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-export async function getBalances(
-  _userId: string
-): Promise<{ balances: AssetBalance[] }> {
-  throw {
-    code: grpc.status.UNIMPLEMENTED,
-    message: "GetBalances is not yet implemented (Phase 7)",
-  }
+export async function getBalances(userId: string): Promise<{ balances: AssetBalance[] }> {
+  return grpcCall<{ balances: AssetBalance[] }>("GetBalances", { userId })
 }
 
 export async function getRecentTrades(
-  _symbol: string,
-  _limit = 30
+  symbol: string,
+  limit = 30
 ): Promise<{ trades: TradeEntry[] }> {
-  throw {
-    code: grpc.status.UNIMPLEMENTED,
-    message: "GetRecentTrades is not yet implemented (Phase 7)",
-  }
+  return grpcCall<{ trades: TradeEntry[] }>("GetRecentTrades", { symbol, limit })
 }
 
 export async function getOpenOrders(
-  _userId: string,
-  _symbol: string
+  userId: string,
+  symbol: string
 ): Promise<{ orders: OrderEntry[] }> {
-  throw {
-    code: grpc.status.UNIMPLEMENTED,
-    message: "GetOpenOrders is not yet implemented (Phase 7)",
-  }
+  return grpcCall<{ orders: OrderEntry[] }>("GetOpenOrders", { userId, symbol })
 }
-
-/* eslint-enable @typescript-eslint/no-unused-vars */

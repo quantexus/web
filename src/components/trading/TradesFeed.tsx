@@ -9,20 +9,8 @@ export function TradesFeed() {
   const symbol = useTradingStore((s) => s.symbol)
   const { data } = useRecentTrades(symbol)
 
-  if (!data) {
-    return <div className="text-zinc-500 text-xs p-2">Loading trades…</div>
-  }
-
-  if ("notImplemented" in data) {
-    return (
-      <div className="text-zinc-500 text-xs p-2">
-        Engine not ready — trades feed available in Phase 7
-      </div>
-    )
-  }
-
   if (data.trades.length === 0) {
-    return <div className="text-zinc-500 text-xs p-2">No trades yet</div>
+    return <div className="text-zinc-500 text-xs p-2">Waiting for trades…</div>
   }
 
   return (
