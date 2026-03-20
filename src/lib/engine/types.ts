@@ -57,3 +57,14 @@ export interface OrderEntry {
   status: string
   createdAt: string
 }
+
+export interface SetBalanceRequest {
+  userId: string
+  asset: string
+  available: string
+  reserved: string
+}
+
+export interface SetBalanceResponse {
+  success: boolean
+}

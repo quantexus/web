@@ -14,6 +14,8 @@ import type {
   AssetBalance,
   TradeEntry,
   OrderEntry,
+  SetBalanceRequest,
+  SetBalanceResponse,
 } from "./types"
 
 const PROTO_PATH = path.resolve(
@@ -88,4 +90,8 @@ export async function getOpenOrders(
   symbol: string
 ): Promise<{ orders: OrderEntry[] }> {
   return grpcCall<{ orders: OrderEntry[] }>("GetOpenOrders", { userId, symbol })
+}
+
+export async function setBalance(req: SetBalanceRequest): Promise<SetBalanceResponse> {
+  return grpcCall<SetBalanceResponse>("SetBalance", req)
 }
