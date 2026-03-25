@@ -38,11 +38,12 @@ pnpm dev                     # http://localhost:3000
 ### Scripts
 
 ```bash
-pnpm dev        # dev server
-pnpm build      # production build
-pnpm lint       # eslint
-pnpm typecheck  # tsc --noEmit
-pnpm test       # vitest
+pnpm dev             # dev server
+pnpm build           # production build
+pnpm lint            # eslint
+pnpm typecheck       # tsc --noEmit
+pnpm test            # vitest (all tests must pass)
+pnpm test:coverage   # vitest + coverage report (must reach 100%)
 ```
 
 ### Environment Variables
@@ -105,6 +106,9 @@ All engine calls go through `src/app/api/`. Each route:
 - Test files colocated: `Component.test.tsx` next to `Component.tsx`.
 - No `any` types in test files.
 - API route tests mock `src/lib/engine/client.ts` only — never mock TanStack Query or React internals.
+- Coverage provider: `@vitest/coverage-v8`. Thresholds: **100% statements, branches, functions, lines** for all non-excluded files.
+- Excluded from coverage: `src/test/**`, `src/lib/engine/types.ts` (type-only), `src/components/ui/**` (shadcn primitives).
+- See [`docs/phases/phase3.md`](docs/phases/phase3.md) for the full per-file test plan.
 
 ### Order Lifecycle States
 
@@ -116,6 +120,7 @@ Only transitions defined in the engine PRD (Section 5.4) are valid. The UI must 
 
 - **Always use the `/commit` skill to create commits. Never run `git commit` directly.**
 - **Always run `/check` before committing.** Fix all lint, type, and test failures before proceeding.
+- **`pnpm test:coverage` must pass (100% threshold) before any commit.** A commit that drops coverage below 100% must not be made.
 - `type: description` format (feat, fix, refactor, test, docs, chore).
 - One logical change per commit. Do not mix features with refactors.
 - No `console.log` in committed code.
