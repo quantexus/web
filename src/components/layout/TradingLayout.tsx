@@ -28,7 +28,7 @@ export function TradingLayout({ symbol, baseAsset, quoteAsset }: TradingLayoutPr
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100">
       <Header />
 
-      <div className="flex-1 grid grid-cols-[300px_280px_1fr] overflow-hidden">
+      <div className="flex-1 grid grid-cols-[300px_280px_1fr_300px] overflow-hidden">
         {/* Order Book */}
         <div className="border-r border-zinc-800 flex flex-col overflow-hidden">
           <div className="text-xs text-zinc-500 px-2 py-1.5 border-b border-zinc-800 font-medium shrink-0">
@@ -49,8 +49,8 @@ export function TradingLayout({ symbol, baseAsset, quoteAsset }: TradingLayoutPr
           </div>
         </div>
 
-        {/* Right column: Balances + Open Orders */}
-        <div className="flex flex-col overflow-hidden">
+        {/* Center column: Balances + Open Orders */}
+        <div className="border-r border-zinc-800 flex flex-col overflow-hidden">
           <div className="shrink-0">
             <div className="text-xs text-zinc-500 px-2 py-1.5 border-b border-zinc-800 font-medium">
               BALANCES
@@ -67,15 +67,15 @@ export function TradingLayout({ symbol, baseAsset, quoteAsset }: TradingLayoutPr
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Trades Feed */}
-      <div className="h-36 border-t border-zinc-800 flex flex-col overflow-hidden shrink-0">
-        <div className="text-xs text-zinc-500 px-2 py-1.5 border-b border-zinc-800 font-medium shrink-0">
-          RECENT TRADES
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <TradesFeed />
+        {/* Recent Trades */}
+        <div className="flex flex-col overflow-hidden">
+          <div className="text-xs text-zinc-500 px-2 py-1.5 border-b border-zinc-800 font-medium shrink-0">
+            RECENT TRADES
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <TradesFeed />
+          </div>
         </div>
       </div>
     </div>
