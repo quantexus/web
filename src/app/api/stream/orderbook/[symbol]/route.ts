@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic"
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { symbol: string } }
+  { params }: { params: Promise<{ symbol: string }> }
 ) {
+  const { symbol } = await params
   const depth = Number(req.nextUrl.searchParams.get("depth") ?? "15")
   const encoder = new TextEncoder()
 
@@ -14,7 +15,7 @@ export async function GET(
     start(controller) {
       const interval = setInterval(async () => {
         try {
-          const data = await getOrderBook(params.symbol, depth)
+          const data = await getOrderBook(symbol, depth)
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
         } catch {
           // engine unreachable — skip tick, client sees no update

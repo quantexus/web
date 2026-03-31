@@ -29,7 +29,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
     mockGetOrderBook.mockResolvedValue(bookData)
 
     const request = new NextRequest("http://localhost/api/stream/orderbook/BTCUSD")
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
 
     expect(response.headers.get("Content-Type")).toBe("text/event-stream")
     expect(response.headers.get("Cache-Control")).toBe("no-cache")
@@ -41,7 +41,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
     mockGetOrderBook.mockResolvedValue(bookData)
 
     const request = new NextRequest("http://localhost/api/stream/orderbook/BTCUSD")
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
 
     const reader = response.body!.getReader()
 
@@ -60,7 +60,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
     mockGetOrderBook.mockResolvedValue({ bids: [], asks: [] })
 
     const request = new NextRequest("http://localhost/api/stream/orderbook/BTCUSD?depth=5")
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
     const reader = response.body!.getReader()
 
     await vi.advanceTimersByTimeAsync(200)
@@ -74,7 +74,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
     mockGetOrderBook.mockResolvedValue({ bids: [], asks: [] })
 
     const request = new NextRequest("http://localhost/api/stream/orderbook/BTCUSD")
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
     const reader = response.body!.getReader()
 
     await vi.advanceTimersByTimeAsync(200)
@@ -88,7 +88,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
     mockGetOrderBook.mockRejectedValue(new Error("engine unreachable"))
 
     const request = new NextRequest("http://localhost/api/stream/orderbook/BTCUSD")
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
     expect(response.headers.get("Content-Type")).toBe("text/event-stream")
 
     // Advance timer - should not throw even though getOrderBook rejects
@@ -104,7 +104,7 @@ describe("GET /api/stream/orderbook/[symbol]", () => {
       nextUrl: new URL("http://localhost/api/stream/orderbook/BTCUSD"),
     } as unknown as NextRequest
 
-    const response = await GET(request, { params: { symbol: "BTCUSD" } })
+    const response = await GET(request, { params: Promise.resolve({ symbol: "BTCUSD" }) })
     expect(response.body).not.toBeNull()
 
     abortController.abort()
